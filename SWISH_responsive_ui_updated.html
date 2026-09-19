@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SWISH</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:linear-gradient(135deg,#020617 0%,#0f172a 50%,#1e1b4b 100%);color:#e0f2fe;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;min-height:100dvh;overflow-x:hidden;overflow-y:auto}
+    .glass{background:rgba(255,255,255,.05);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 32px rgba(0,0,0,.3)}
+    .app{display:flex;flex-direction:column;min-height:100dvh;width:min(100%,960px);margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+
+    .header{padding:16px 20px 12px;text-align:center;border-radius:0 0 22px 22px;position:relative}
+    .menu-btn,.change-key-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#7dd3fc;width:36px;height:36px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .menu-btn{left:16px}.change-key-btn{right:16px}
+    .logo{font-size:11px;letter-spacing:3px;color:#7dd3fc;opacity:.7}
+    .title{font-size:26px;font-weight:300;letter-spacing:5px;color:#e0f2fe;text-shadow:0 0 20px rgba(125,211,252,.4);margin-top:2px}
+    .header-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;font-size:11px}
+    .dot{width:7px;height:7px;background:#22d3ee;border-radius:50%;box-shadow:0 0 10px #22d3ee}
+
+    .orb-section{display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:clamp(18px,4vw,40px) 20px 24px;min-height:clamp(190px,28vh,300px)}
+    .orb{width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(56,189,248,.35),rgba(14,165,233,.1) 45%,transparent 70%);border:1px solid rgba(125,211,252,.3);box-shadow:0 0 40px rgba(56,189,248,.2),inset 0 0 30px rgba(56,189,248,.15);position:relative;z-index:2;transition:all .4s ease}
+    .orb.thinking{box-shadow:0 0 60px rgba(167,139,250,.45),inset 0 0 40px rgba(167,139,250,.25);transform:scale(1.06);border-color:rgba(167,139,250,.5)}
+    .orb.listening{box-shadow:0 0 70px rgba(34,211,238,.5),inset 0 0 40px rgba(34,211,238,.25);transform:scale(1.08);border-color:rgba(34,211,238,.6)}
+    .orb.speaking{animation:speakPulse .9s ease-in-out infinite;border-color:rgba(52,211,153,.6)}
+    @keyframes speakPulse{0%,100%{box-shadow:0 0 45px rgba(52,211,153,.35),inset 0 0 30px rgba(52,211,153,.2);transform:scale(1.02)}50%{box-shadow:0 0 75px rgba(52,211,153,.55),inset 0 0 45px rgba(52,211,153,.3);transform:scale(1.09)}}
+    .rings{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1}
+    .ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(125,211,252,.15);animation:pulse 4s ease-out infinite}
+    .ring1{width:170px;height:170px}.ring2{width:210px;height:210px;animation-delay:1.2s}.ring3{width:250px;height:250px;animation-delay:2.4s}
+    @keyframes pulse{0%{transform:translate(-50%,-50%) scale(.85);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.3);opacity:0}}
+    .status{margin-top:24px;padding:10px 18px;border-radius:18px;display:flex;flex-direction:column;gap:7px;font-size:12px}
+    .status-item{display:flex;align-items:center;gap:8px;color:#bae6fd}
+
+    .chat-area{min-height:150px;max-height:56vh;overflow:auto;padding:clamp(12px,2vw,20px);margin:0 12px;border-radius:18px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+    .message{max-width:min(92%,760px);width:max-content;padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.55;animation:fadeIn .3s ease;overflow-wrap:anywhere;word-break:break-word;position:relative;user-select:text}
+    .message.swish{background:rgba(14,165,233,.15);border:1px solid rgba(56,189,248,.2);align-self:flex-start}
+    .message.user{background:rgba(56,189,248,.2);border:1px solid rgba(125,211,252,.25);align-self:flex-end}
+    .message img{max-width:100%;border-radius:12px;margin:0;display:block}
+    .image-card{width:min(100%,620px);padding:8px;border-radius:18px;background:rgba(2,6,23,.5);border:1px solid rgba(125,211,252,.18);box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .image-card img{width:100%;height:auto;max-height:520px;object-fit:contain;background:#020617}
+    .image-download{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(125,211,252,.2);background:rgba(56,189,248,.12);color:#e0f2fe;text-decoration:none;font-size:12px;font-weight:600}
+    .image-download:hover{background:rgba(56,189,248,.22);border-color:rgba(125,211,252,.4)}
+    .image-download svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    .icon-btn{display:inline-flex;align-items:center;justify-content:center}
+    .icon-btn svg,.menu-btn svg,.change-key-btn svg,.mic-btn svg,#sendBtn svg,.action-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .message-context{position:fixed;z-index:100;display:none;min-width:210px;padding:7px;border-radius:16px;background:rgba(8,15,30,.96);border:1px solid rgba(125,211,252,.22);box-shadow:0 18px 50px rgba(0,0,0,.45);backdrop-filter:blur(18px)}
+    .message-context.open{display:block}
+    .context-row{width:100%;display:flex;align-items:center;gap:10px;padding:10px 11px;border:0;background:transparent;color:#e0f2fe;border-radius:11px;font-size:13px;text-align:left;cursor:pointer}
+    .context-row:hover{background:rgba(125,211,252,.1)}
+    .context-row svg{width:17px;height:17px;stroke:#7dd3fc;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .reaction-bar{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+    .reaction{border:1px solid rgba(125,211,252,.16);background:rgba(255,255,255,.06);border-radius:999px;padding:3px 7px;font-size:12px;cursor:pointer}
+    .reply-quote{margin-bottom:8px;padding:7px 9px;border-left:3px solid #38bdf8;background:rgba(56,189,248,.08);border-radius:7px;font-size:11px;color:#bae6fd}
+
+
+    .message table{display:block;width:100%;overflow-x:auto;border-collapse:collapse;margin:8px 0;font-size:12px}
+    .message th,.message td{border:1px solid rgba(125,211,252,.16);padding:7px 9px;text-align:left;white-space:nowrap}
+    .message pre{white-space:pre-wrap;overflow:auto;background:rgba(0,0,0,.28);padding:10px;border-radius:10px;margin:7px 0;font-size:12px}
+    .message ul,.message ol{padding-left:20px;margin:5px 0}
+    .message a{color:#7dd3fc}
+    .weather-card{width:min(100%,560px);border-radius:20px;overflow:hidden;border:1px solid rgba(125,211,252,.24);background:linear-gradient(145deg,rgba(14,165,233,.24),rgba(15,23,42,.94));box-shadow:0 12px 35px rgba(0,0,0,.25)}
+    .weather-hero{padding:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;background:linear-gradient(135deg,rgba(56,189,248,.22),rgba(99,102,241,.16))}
+    .weather-place{font-size:13px;color:#bae6fd;opacity:.9}
+    .weather-temp{font-size:42px;font-weight:300;line-height:1;margin-top:4px}
+    .weather-icon{font-size:58px;line-height:1;filter:drop-shadow(0 0 14px rgba(125,211,252,.3))}
+    .weather-condition{font-size:13px;color:#e0f2fe;margin-top:7px}
+    .weather-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(125,211,252,.12)}
+    .weather-stat{background:rgba(2,6,23,.46);padding:12px;text-align:center}
+    .weather-stat strong{display:block;font-size:14px;color:#e0f2fe}
+    .weather-stat span{display:block;font-size:10px;color:#7dd3fc;margin-top:3px}
+    .weather-footer{padding:10px 14px;font-size:10px;color:#7dd3fc;opacity:.75}
+
+    .typing-dots{display:flex;gap:4px;padding:4px 0}
+    .typing-dots span{width:6px;height:6px;background:#7dd3fc;border-radius:50%;animation:typingBounce 1s infinite ease-in-out}
+    .typing-dots span:nth-child(2){animation-delay:.15s}.typing-dots span:nth-child(3){animation-delay:.3s}
+    @keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-5px);opacity:1}}
+
+    .api-section{margin:8px 12px 0;padding:12px;border-radius:16px}
+    .api-section.hidden{display:none}
+    .api-label{font-size:11px;color:#7dd3fc;opacity:.8;margin-bottom:8px}
+    .api-row{display:flex;gap:8px}
+    #apiKeyInput,.field-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;color:#e0f2fe;font-size:13px;outline:none}
+    .eye-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;width:40px;font-size:15px;cursor:pointer;color:#e0f2fe}
+    #saveKeyBtn{background:rgba(56,189,248,.2);border:1px solid rgba(56,189,248,.35);color:#e0f2fe;border-radius:12px;padding:0 14px;font-size:13px;cursor:pointer}
+    .key-status{font-size:11px;color:#34d399;margin-top:8px;display:none}
+
+    .input-area{margin:8px 12px;padding:8px;border-radius:26px;display:flex;gap:8px;align-items:center;position:sticky;bottom:8px;z-index:10}
+    #userInput{flex:1;background:transparent;border:none;color:#e0f2fe;font-size:15px;outline:none;padding:6px 4px;min-width:0}
+    #userInput::placeholder{color:#7dd3fc;opacity:.5}
+    #sendBtn,.mic-btn{background:rgba(56,189,248,.2);border:1px solid rgba(56,189,248,.35);color:#e0f2fe;width:42px;height:42px;border-radius:50%;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    .mic-btn.listening{background:rgba(34,211,238,.35);border-color:rgba(34,211,238,.6);box-shadow:0 0 15px rgba(34,211,238,.4);animation:micPulse 1.5s infinite}
+    @keyframes micPulse{0%{box-shadow:0 0 0 0 rgba(34,211,238,.4)}70%{box-shadow:0 0 0 12px rgba(34,211,238,0)}100%{box-shadow:0 0 0 0 rgba(34,211,238,0)}}
+
+    .footer{margin:0 12px 12px;padding:10px 14px;border-radius:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;flex-wrap:wrap}
+    .footer-text{font-size:11px;color:#7dd3fc;opacity:.75;letter-spacing:.5px;white-space:nowrap}
+    .social-links{display:flex;gap:8px}
+    .social-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;text-decoration:none;color:#e0f2fe;transition:.2s}
+    .social-btn:hover{background:rgba(56,189,248,.25);border-color:rgba(56,189,248,.45);transform:scale(1.08)}
+
+    .modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,.75);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:50}
+    .modal-overlay.open{display:flex}
+    .modal{width:100%;max-width:480px;max-height:82vh;overflow-y:auto;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));position:relative;animation:slideUp .25s ease}
+    @keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .modal-close{position:absolute;right:14px;top:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#e0f2fe;width:30px;height:30px;border-radius:50%;cursor:pointer}
+    .panel-title{font-size:16px;letter-spacing:1px;color:#7dd3fc;margin-bottom:14px;padding-right:30px}
+    .back-link{background:none;border:none;color:#7dd3fc;font-size:13px;cursor:pointer;margin-bottom:10px;padding:0}
+    .menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .menu-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px 8px;text-align:center;color:#e0f2fe;cursor:pointer;font-size:11px}
+    .menu-item .menu-icon{font-size:22px;display:block;margin-bottom:6px}
+    .new-chat-btn{width:100%;margin-bottom:14px;background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.35);color:#e0f2fe;border-radius:14px;padding:12px;font-size:14px;cursor:pointer}
+    .field-textarea{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;color:#e0f2fe;font-size:13px;outline:none;resize:vertical;min-height:60px;margin-bottom:10px;font-family:inherit}
+    .action-btn{background:rgba(56,189,248,.2);border:1px solid rgba(56,189,248,.35);color:#e0f2fe;border-radius:12px;padding:10px 14px;font-size:13px;cursor:pointer}
+    .action-btn.full{width:100%;margin-bottom:10px}
+    .action-btn.sos{background:rgba(248,113,113,.25);border-color:rgba(248,113,113,.5);font-size:15px;padding:14px}
+    .list-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-size:13px}
+    .list-item-text{flex:1}.list-item-meta{font-size:10px;color:#7dd3fc;opacity:.7;margin-top:2px}
+    .list-item button{background:none;border:none;color:#f87171;font-size:15px;cursor:pointer}
+    .empty-hint{font-size:12px;color:#7dd3fc;opacity:.6;text-align:center;padding:14px 0}
+    .camera-preview{width:100%;border-radius:14px;background:#000;margin-bottom:10px;max-height:240px;object-fit:cover}
+    .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+    .gallery-grid img,.gallery-grid video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
+    .about-block{font-size:13px;line-height:1.6;color:#bae6fd}
+    .about-block h3{color:#7dd3fc;font-size:13px;margin:12px 0 4px}
+    .attach-preview{max-width:180px;border-radius:12px;margin-top:6px;border:1px solid rgba(125,211,252,.3)}
+    .field-row{display:flex;gap:8px;margin-bottom:12px}
+
+    .call-overlay{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#0f172a,#020617 75%);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:60;padding:20px}
+    .call-overlay.open{display:flex}
+    .call-end-btn{position:absolute;top:calc(20px + env(safe-area-inset-top));right:20px;background:rgba(248,113,113,.2);border:1px solid rgba(248,113,113,.4);color:#fecaca;border-radius:20px;padding:8px 14px;font-size:12px;cursor:pointer}
+    .call-avatar-wrap{position:relative;width:200px;height:300px;display:flex;align-items:center;justify-content:center}
+    .holo-figure{width:180px;height:290px;filter:drop-shadow(0 0 18px rgba(56,189,248,.55));opacity:.85;animation:holoBreathe 3.2s ease-in-out infinite;position:relative;z-index:2}
+    @keyframes holoBreathe{0%,100%{transform:translateY(0) scale(1);opacity:.8}50%{transform:translateY(-4px) scale(1.015);opacity:.95}}
+    .holo-figure.listening{filter:drop-shadow(0 0 26px rgba(34,211,238,.75))}
+    .holo-figure.thinking{filter:drop-shadow(0 0 26px rgba(167,139,250,.75))}
+    .holo-figure.speaking{filter:drop-shadow(0 0 30px rgba(52,211,153,.85))}
+    .call-status{margin-top:20px;font-size:13px;letter-spacing:1.5px;color:#7dd3fc;text-transform:uppercase}
+    .call-transcript{margin-top:12px;font-size:14px;color:#e0f2fe;text-align:center;max-width:300px;min-height:40px;opacity:.85}
+
+    @media(min-width:700px){
+      .header{border-radius:0 0 24px 24px}
+      .chat-area{margin-left:24px;margin-right:24px}
+      .input-area{margin-left:24px;margin-right:24px}
+      .footer{margin-left:24px;margin-right:24px}
+      .orb-section{min-height:250px}
+    }
+    @media(max-width:560px){
+      .title{font-size:22px;letter-spacing:4px}
+      .logo{font-size:9px}
+      .orb{width:110px;height:110px}
+      .ring1{width:145px;height:145px}.ring2{width:180px;height:180px}.ring3{width:215px;height:215px}
+      .chat-area{max-height:50vh}
+      .message{max-width:94%}
+      .weather-temp{font-size:36px}.weather-icon{font-size:48px}
+      .footer{justify-content:center}
+    }
+    @media(max-height:700px){
+      .orb-section{min-height:170px;padding-top:12px;padding-bottom:12px}
+      .orb{width:90px;height:90px}
+      .chat-area{max-height:45vh}
+      .status{margin-top:12px;padding:7px 12px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header glass">
+      <button class="menu-btn icon-btn" id="menuBtn" aria-label="Open menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="logo">Special Wing Inteligence Smart Humanoid</div>
+      <h1 class="title">SWISH</h1>
+      <div class="status-item header-status"><span class="dot"></span><span id="headerStatusText">Ready</span></div>
+      <button class="change-key-btn icon-btn" id="changeKeyBtn" aria-label="API settings"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.6V20a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H6v-2.6h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V5h2.6v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v2.6h-.2a1.7 1.7 0 0 0-1.6 1Z"/></svg></button>
+    </header>
+
+    <section class="orb-section">
+      <div class="rings"><div class="ring ring1"></div><div class="ring ring2"></div><div class="ring ring3"></div></div>
+      <div class="orb" id="orb"></div>
+      <div class="status glass">
+        <div class="status-item"><span class="dot"></span> Personal AI For All Duty</div>
+        <div class="status-item"><span class="dot"></span> Made By Swish Tech ©2026</div>
+      </div>
+    </section>
+
+    <div class="chat-area glass" id="chat">
+      <div class="message swish">Hey... I’m S.W.I.S.H. how can i help you??</div>
+    </div>
+
+    <div class="api-section glass" id="apiSection">
+      <div class="api-label">Gemini API Key</div>
+      <div class="api-row">
+        <input type="password" id="apiKeyInput" placeholder="Paste your Gemini API key..." />
+        <button class="eye-btn" id="toggleKeyVisibility">👁️</button>
+        <button id="saveKeyBtn">Save</button>
+      </div>
+      <div class="key-status" id="keyStatus">API key saved ✓</div>
+    </div>
+
+    <div class="input-area glass">
+      <button id="attachBtn" class="mic-btn icon-btn" title="Attach" aria-label="Attach file"><svg viewBox="0 0 24 24"><path d="m21.4 11.6-8.8 8.8a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7L9.8 17.6a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg></button>
+      <button id="micBtn" class="mic-btn icon-btn" title="Voice" aria-label="Voice input"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg></button>
+      <input type="text" id="userInput" placeholder="Chat or type @help..." autocomplete="off" />
+      <button id="callModeBtn" class="mic-btn icon-btn" title="Call" aria-label="Call mode"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.2-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7A2 2 0 0 1 22 16.9Z"/></svg></button>
+      <button id="sendBtn" class="icon-btn" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*" style="display:none" />
+
+    <footer class="footer glass">
+      <div class="footer-text">Swish Tech ©2026</div>
+      <div class="social-links">
+        <a href="https://www.facebook.com/profile.php?id=61594744972802" target="_blank" class="social-btn">f</a>
+      </div>
+    </footer>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal glass">
+      <button class="modal-close" id="modalClose">✕</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+
+  <div class="message-context" id="messageContext">
+    <button class="context-row" data-context-action="copy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy message</span></button>
+    <button class="context-row" data-context-action="reply"><svg viewBox="0 0 24 24"><path d="M9 17l-5-5 5-5"/><path d="M4 12h10a6 6 0 0 1 6 6v1"/></svg><span>Reply to message</span></button>
+    <button class="context-row" data-context-action="react"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg><span>React</span></button>
+  </div>
+
+  <div class="call-overlay" id="callOverlay">
+    <button class="call-end-btn" id="callEndBtn">✕ End Call</button>
+    <div class="call-avatar-wrap">
+      <svg class="holo-figure" id="holoFigure" viewBox="0 0 200 320">
+        <defs><linearGradient id="holoGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7dd3fc" stop-opacity=".9"/><stop offset="100%" stop-color="#38bdf8" stop-opacity=".15"/></linearGradient></defs>
+        <ellipse cx="100" cy="55" rx="34" ry="40" fill="url(#holoGrad)"/>
+        <path d="M60 100 Q100 80 140 100 L150 230 Q100 250 50 230 Z" fill="url(#holoGrad)"/>
+        <path d="M60 105 L20 190 L35 200 L70 130 Z" fill="url(#holoGrad)"/>
+        <path d="M140 105 L180 190 L165 200 L130 130 Z" fill="url(#holoGrad)"/>
+        <path d="M65 228 L55 310 L80 310 L88 235 Z" fill="url(#holoGrad)"/>
+        <path d="M135 228 L145 310 L120 310 L112 235 Z" fill="url(#holoGrad)"/>
+      </svg>
+    </div>
+    <div class="call-status" id="callStatus">Listening...</div>
+    <div class="call-transcript" id="callTranscript"></div>
+  </div>
+
+<script>
+const MODEL = "gemini-3.8-flash";
+const IMAGE_MODEL = "gemini-3.1-flash-image";
+const SOS_NUMBER = "";
+
+const SYSTEM_PROMPT = `You are S.W.I.S.H — a warm, emotionally intelligent personal AI friend.
+When the user asks you to do something, USE the tools. Available tools:
+send_email, call_number, send_whatsapp, open_maps, search_web, open_spotify, set_timer, get_weather, create_note, create_reminder, generate_image, read_notes, read_reminders.
+Be natural and helpful.`;
+
+const tools = [{
+  functionDeclarations: [
+    {name:"send_email",description:"Open email compose",parameters:{type:"OBJECT",properties:{to:{type:"STRING"},subject:{type:"STRING"},body:{type:"STRING"}},required:["to","body"]}},
+    {name:"call_number",description:"Open phone dialer",parameters:{type:"OBJECT",properties:{number:{type:"STRING"}},required:["number"]}},
+    {name:"send_whatsapp",description:"Open WhatsApp with message",parameters:{type:"OBJECT",properties:{number:{type:"STRING"},message:{type:"STRING"}},required:["message"]}},
+    {name:"open_maps",description:"Open Google Maps",parameters:{type:"OBJECT",properties:{query:{type:"STRING"},mode:{type:"STRING"}},required:["query"]}},
+    {name:"search_web",description:"Google search",parameters:{type:"OBJECT",properties:{query:{type:"STRING"}},required:["query"]}},
+    {name:"open_spotify",description:"Open Spotify search",parameters:{type:"OBJECT",properties:{query:{type:"STRING"}},required:["query"]}},
+    {name:"set_timer",description:"Set a timer in minutes",parameters:{type:"OBJECT",properties:{minutes:{type:"NUMBER"},label:{type:"STRING"}},required:["minutes"]}},
+    {name:"get_weather",description:"Get weather for a city",parameters:{type:"OBJECT",properties:{location:{type:"STRING"}},required:["location"]}},
+    {name:"create_note",description:"Save a note",parameters:{type:"OBJECT",properties:{text:{type:"STRING"}},required:["text"]}},
+    {name:"create_reminder",description:"Create a reminder",parameters:{type:"OBJECT",properties:{text:{type:"STRING"},when:{type:"STRING"}},required:["text"]}},
+    {name:"generate_image",description:"Generate an image",parameters:{type:"OBJECT",properties:{prompt:{type:"STRING"}},required:["prompt"]}},
+    {name:"read_notes",description:"Read saved notes",parameters:{type:"OBJECT",properties:{limit:{type:"NUMBER"}}}},
+    {name:"read_reminders",description:"Read reminders",parameters:{type:"OBJECT",properties:{}}}
+  ]
+}];
+
+let conversationHistory = JSON.parse(localStorage.getItem("swish_history")||"[]");
+let API_KEY = localStorage.getItem("swish_gemini_key1")||"";
+let isListening=false, callActive=false, pendingImage=null;
+
+const chat=document.getElementById("chat"), input=document.getElementById("userInput");
+const sendBtn=document.getElementById("sendBtn"), micBtn=document.getElementById("micBtn");
+const attachBtn=document.getElementById("attachBtn"), fileInput=document.getElementById("fileInput");
+const orb=document.getElementById("orb"), apiSection=document.getElementById("apiSection");
+const apiKeyInput=document.getElementById("apiKeyInput"), saveKeyBtn=document.getElementById("saveKeyBtn");
+const keyStatus=document.getElementById("keyStatus"), changeKeyBtn=document.getElementById("changeKeyBtn");
+const toggleKeyVisibility=document.getElementById("toggleKeyVisibility");
+const headerStatusText=document.getElementById("headerStatusText");
+const menuBtn=document.getElementById("menuBtn"), modalOverlay=document.getElementById("modalOverlay");
+const modalBody=document.getElementById("modalBody"), modalClose=document.getElementById("modalClose");
+const callModeBtn=document.getElementById("callModeBtn"), callOverlay=document.getElementById("callOverlay");
+const callEndBtn=document.getElementById("callEndBtn"), callStatus=document.getElementById("callStatus");
+const callTranscript=document.getElementById("callTranscript"), holoFigure=document.getElementById("holoFigure");
+
+if(API_KEY) apiSection.classList.add("hidden");
+
+function loadStore(k){try{return JSON.parse(localStorage.getItem(k))||[]}catch{return[]}}
+function saveStore(k,v){localStorage.setItem(k,JSON.stringify(v))}
+let notesStore=loadStore("swish_notes"), remindersStore=loadStore("swish_reminders");
+let scheduleStore=loadStore("swish_schedule"), galleryStore=loadStore("swish_gallery");
+
+function saveHistory(){localStorage.setItem("swish_history",JSON.stringify(conversationHistory))}
+function trimHistory(max=16){if(conversationHistory.length>max*2){conversationHistory=conversationHistory.slice(-max*2);saveHistory()}}
+function clearChat(){conversationHistory=[];saveHistory();chat.innerHTML=`<div class="message swish">Hey... I’m S.W.I.S.H. how can i help you??</div>`;pendingImage=null}
+
+function escapeHtml(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function simpleMarkdown(t){
+  let s=escapeHtml(t);
+  s=s.replace(/```([\s\S]*?)```/g,"<pre>$1</pre>");
+  s=s.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/\*(.*?)\*/g,"<em>$1</em>");
+  s=s.replace(/`([^`]+)`/g,"<code>$1</code>");
+  s=s.replace(/\n/g,"<br>");
+  return s;
+}
+function weatherCard(raw){
+  try{
+    const w=JSON.parse(raw.replace("__WEATHER__",""));
+    return `<div class="weather-card" role="img" aria-label="Weather update for ${escapeHtml(w.name)}">
+      <div class="weather-hero">
+        <div><div class="weather-place">Weather · ${escapeHtml(w.name)}, ${escapeHtml(w.country)}</div>
+          <div class="weather-temp">${w.temp}°C</div><div class="weather-condition">${escapeHtml(w.condition)}</div>
+        </div><div class="weather-icon">${w.icon}</div>
+      </div>
+      <div class="weather-grid">
+        <div class="weather-stat"><strong>${w.humidity}%</strong><span>Humidity</span></div>
+        <div class="weather-stat"><strong>${w.wind} km/h</strong><span>Wind</span></div>
+        <div class="weather-stat"><strong>Live</strong><span>Update</span></div>
+      </div>
+      <div class="weather-footer">Open-Meteo weather update · visual card</div>
+    </div>`;
+  }catch{return `<div class="message swish">Weather unavailable.</div>`}
+}
+function addMessage(text,type,isHtml=false){
+  const div=document.createElement("div");
+  div.className=`message ${type}`;
+  div.dataset.message=text;
+  if(typeof text==="string" && text.startsWith("__WEATHER__")) div.innerHTML=weatherCard(text);
+  else div.innerHTML=isHtml?text:simpleMarkdown(text);
+  chat.appendChild(div);chat.scrollTop=chat.scrollHeight;return div;
+}
+function addMessage(text,type,isHtml=false){const div=document.createElement("div");div.className=`message ${type}`;div.innerHTML=isHtml?text:simpleMarkdown(text);chat.appendChild(div);chat.scrollTop=chat.scrollHeight;return div}
+function addImageMessage(url,type="swish",filename="SWISH_image.png"){
+  const div=document.createElement("div");div.className=`message ${type}`;
+  const card=document.createElement("div");card.className="image-card";
+  const img=document.createElement("img");img.src=url;img.alt="Image preview";img.loading="lazy";
+  const download=document.createElement("a");download.className="image-download";download.href=url;download.download=filename;download.setAttribute("aria-label","Download image");
+  download.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Download image</span>';
+  card.append(img,download);div.appendChild(card);chat.appendChild(div);chat.scrollTop=chat.scrollHeight;return div;
+}
+function showTyping(){const div=document.createElement("div");div.className="message swish";div.id="typingIndicator";div.innerHTML=`<div class="typing-dots"><span></span><span></span><span></span></div>`;chat.appendChild(div);chat.scrollTop=chat.scrollHeight}
+function hideTyping(){document.getElementById("typingIndicator")?.remove()}
+
+function handleAtCommands(text){
+  const lower=text.toLowerCase().trim();
+  if(lower==="@clear"||lower==="@new"){clearChat();return true}
+  if(lower.startsWith("@note ")){const c=text.slice(6).trim();if(c){notesStore.unshift({text:c,time:new Date().toLocaleString()});saveStore("swish_notes",notesStore);addMessage(`Note saved: "${c}"`,"swish")}return true}
+  if(lower==="@notes"){openModal(renderNotes());return true}
+  if(lower==="@reminders"){openModal(renderReminders());return true}
+  if(lower==="@schedule"){openModal(renderSchedule());return true}
+  if(lower==="@gallery"){openModal(renderGallery());return true}
+  if(lower==="@camera"){openModal(renderCamera());initCamera();return true}
+  if(lower.startsWith("@image")){generateImageFromAI(text.slice(6).trim()||"beautiful abstract art");return true}
+  if(lower==="@bugscan"||lower==="@scan"){runBugScan();return true}
+  if(lower==="@help"){addMessage(`@note [text]  @notes  @reminders  @schedule  @gallery  @camera  @image [desc]  @bugscan  @clear`,"swish");return true}
+  return false;
+}
+
+saveKeyBtn.onclick=()=>{const k=apiKeyInput.value.trim();if(!k)return;API_KEY=k;localStorage.setItem("swish_gemini_key1",k);keyStatus.style.display="block";apiKeyInput.value="";setTimeout(()=>{apiSection.classList.add("hidden");keyStatus.style.display="none"},800)};
+changeKeyBtn.onclick=()=>{apiSection.classList.remove("hidden");apiKeyInput.focus()};
+toggleKeyVisibility.onclick=()=>{apiKeyInput.type=apiKeyInput.type==="password"?"text":"password"};
+
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+let recognition=null;
+if(SpeechRecognition){
+  recognition=new SpeechRecognition();recognition.continuous=false;recognition.interimResults=false;recognition.lang="en-US";
+  recognition.onstart=()=>{isListening=true;micBtn.classList.add("listening");orb.classList.add("listening");headerStatusText.textContent="Listening..."};
+  recognition.onresult=e=>{input.value=e.results[0][0].transcript;setTimeout(sendMessage,250)};
+  recognition.onerror=e=>{stopListening();if(e.error==="not-allowed")addMessage("Mic permission denied.","swish")};
+  recognition.onend=()=>stopListening();
+}else{micBtn.style.opacity=".4"}
+function startListening(){if(recognition)try{recognition.start()}catch{}}
+function stopListening(){isListening=false;micBtn.classList.remove("listening");orb.classList.remove("listening");headerStatusText.textContent="Ready"}
+micBtn.onclick=()=>{if(!recognition){addMessage("Use Chrome for voice.","swish");return}isListening?recognition.stop():startListening()};
+
+attachBtn.onclick=()=>fileInput.click();
+fileInput.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{pendingImage=r.result;addMessage("Photo attached. Send your question.","swish")};r.readAsDataURL(f);fileInput.value=""};
+
+function getBestVoice(){const v=speechSynthesis.getVoices();return v.find(x=>x.name.includes("Google")&&x.lang.startsWith("en"))||v.find(x=>x.lang.startsWith("en"))||v[0]}
+function speak(text,onDone){if(!("speechSynthesis"in window)){onDone&&onDone();return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.voice=getBestVoice();u.rate=1.05;u.onstart=()=>setCallState("speaking");u.onend=u.onerror=()=>onDone&&onDone();speechSynthesis.speak(u)}
+
+async function executeTool(name,args){
+  if(name==="send_email"){const to=args.to||"",sub=args.subject||"From S.W.I.S.H",body=args.body||"";window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,"_blank");return`Opened email to ${to}`;}
+  if(name==="call_number"){window.open(`tel:${(args.number||"").replace(/\s/g,"")}`,"_self");return`Opening dialer...`;}
+  if(name==="send_whatsapp"){const n=(args.number||"").replace(/\D/g,""),m=args.message||"";window.open(n?`https://wa.me/${n}?text=${encodeURIComponent(m)}`:`https://wa.me/?text=${encodeURIComponent(m)}`,"_blank");return`Opening WhatsApp...`;}
+  if(name==="open_maps"){const q=args.query||"",mode=(args.mode||"search").toLowerCase();window.open(mode==="directions"?`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}`:`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`,"_blank");return`Opening maps...`;}
+  if(name==="search_web"){window.open(`https://www.google.com/search?q=${encodeURIComponent(args.query||"")}`,"_blank");return`Searching...`;}
+  if(name==="open_spotify"){window.open(`https://open.spotify.com/search/${encodeURIComponent(args.query||"")}`,"_blank");return`Opening Spotify...`;}
+  if(name==="set_timer"){const mins=Number(args.minutes)||1,label=args.label||"Timer";addMessage(`Timer: ${label} — ${mins} min`,"swish");setTimeout(()=>{const msg=`${label} is done!`;if(Notification?.permission==="granted")new Notification("SWISH",{body:msg});addMessage(`⏰ ${msg}`,"swish");speak(msg)},mins*60000);return`Timer set for ${mins} minute(s).`;}
+  if(name==="get_weather"){try{const loc=args.location||"Johannesburg";const geo=await(await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(loc)}&count=1`)).json();if(!geo.results?.length)return`Couldn't find ${loc}`;const{latitude,longitude,name,country}=geo.results[0];const w=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m`)).json();const c=w.current;const codes={0:["☀️","Clear"],1:["🌤️","Mainly clear"],2:["⛅","Partly cloudy"],3:["☁️","Overcast"],45:["🌫️","Fog"],48:["🌫️","Fog"],51:["🌦️","Light drizzle"],53:["🌦️","Drizzle"],55:["🌧️","Heavy drizzle"],61:["🌧️","Rain"],63:["🌧️","Rain"],65:["🌧️","Heavy rain"],71:["🌨️","Snow"],73:["🌨️","Snow"],75:["❄️","Heavy snow"],80:["🌦️","Showers"],81:["🌧️","Showers"],82:["⛈️","Heavy showers"],95:["⛈️","Thunderstorm"],96:["⛈️","Thunderstorm"],99:["⛈️","Thunderstorm"]};const [icon,condition]=codes[c.weather_code]||["🌡️","Unknown"];return`__WEATHER__${JSON.stringify({name,country,icon,condition,temp:Math.round(c.temperature_2m),humidity:c.relative_humidity_2m,wind:Math.round(c.wind_speed_10m)})}`;}catch{return`Weather unavailable`}}
+  if(name==="create_note"){notesStore.unshift({text:args.text,time:new Date().toLocaleString()});saveStore("swish_notes",notesStore);return`Note saved: "${args.text}"`;}
+  if(name==="create_reminder"){let when=args.when;if(!when||isNaN(Date.parse(when)))when=new Date(Date.now()+3600000).toISOString();else when=new Date(when).toISOString();const r={text:args.text,when,id:Date.now()};remindersStore.push(r);saveStore("swish_reminders",remindersStore);scheduleReminderAlert(r);return`Reminder set: "${args.text}"`;}
+  if(name==="generate_image"){await generateImageFromAI(args.prompt);return`Image generated`;}
+  if(name==="read_notes"){if(!notesStore.length)return`No notes yet`;return`Your notes:\n`+notesStore.slice(0,args.limit||5).map((n,i)=>`${i+1}. ${n.text}`).join("\n");}
+  if(name==="read_reminders"){if(!remindersStore.length)return`No reminders`;return`Reminders:\n`+remindersStore.map(r=>`• ${r.text} — ${new Date(r.when).toLocaleString()}`).join("\n");}
+  return`Done`;
+}
+
+async function sendMessage(){
+  let text=input.value.trim();
+  if(!text&&!pendingImage)return;
+  if(!API_KEY){addMessage("Please enter your Gemini API key first.","swish");apiSection.classList.remove("hidden");return}
+  if(text.startsWith("@")&&handleAtCommands(text)){input.value="";return}
+
+  const userParts=[];
+  if(pendingImage){userParts.push({inlineData:{mimeType:"image/jpeg",data:pendingImage.split(",")[1]}});addImageMessage(pendingImage,"user");pendingImage=null}
+  if(text){userParts.push({text});addMessage(text,"user")}
+  input.value="";
+  conversationHistory.push({role:"user",parts:userParts});trimHistory();saveHistory();
+  orb.classList.add("thinking");headerStatusText.textContent="Thinking...";showTyping();
+
+  try{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{
+      method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":API_KEY},
+      body:JSON.stringify({system_instruction:{parts:[{text:SYSTEM_PROMPT}]},contents:conversationHistory,tools,generationConfig:{temperature:.85,maxOutputTokens:900}})
+    });
+    const data=await res.json();hideTyping();
+    if(data.error){
+      const msg=data.error.message||"Gemini API request failed";
+      addMessage("Gemini API error: "+msg,"swish");
+    }
+    else{
+      const cand=data.candidates?.[0];let reply="";const fcs=[];
+      if(cand?.content?.parts)for(const p of cand.content.parts){if(p.text)reply+=p.text;if(p.functionCall)fcs.push(p.functionCall)}
+      for(const fc of fcs){const result=await executeTool(fc.name,fc.args||{});if(fc.name!=="generate_image")addMessage(result,"swish")}
+      if(reply){addMessage(reply,"swish");conversationHistory.push({role:"model",parts:[{text:reply}]});trimHistory();saveHistory()}
+    }
+  }catch(e){
+    hideTyping();
+    addMessage("Connection error: "+(e?.message||"Unable to reach the Gemini API. Check your internet connection, API key restrictions, and that this HTML file is being served from a web server rather than blocked by the browser.","swish"));
+    console.error("SWISH Gemini connection error",e);
+  }
+  orb.classList.remove("thinking");headerStatusText.textContent="Ready";
+}
+
+// Long-press / context menu for chat messages: copy, reply, react.
+const messageContext=document.getElementById("messageContext");
+let contextMessage=null,longPressTimer=null;
+function closeMessageContext(){messageContext.classList.remove("open");contextMessage=null}
+function openMessageContext(msg,x,y){
+  contextMessage=msg;
+  const pad=8,w=220,h=150;
+  messageContext.style.left=Math.max(pad,Math.min(x,innerWidth-w-pad))+"px";
+  messageContext.style.top=Math.max(pad,Math.min(y,innerHeight-h-pad))+"px";
+  messageContext.classList.add("open");
+}
+function messagePlainText(msg){
+  return (msg?.dataset.message||msg?.innerText||"").replace(/__WEATHER__.*/,"Weather update").trim();
+}
+chat.addEventListener("contextmenu",e=>{
+  const msg=e.target.closest(".message"); if(!msg)return;
+  e.preventDefault();openMessageContext(msg,e.clientX,e.clientY);
+});
+chat.addEventListener("pointerdown",e=>{
+  const msg=e.target.closest(".message"); if(!msg)return;
+  if(e.pointerType==="mouse")return;
+  longPressTimer=setTimeout(()=>openMessageContext(msg,e.clientX,e.clientY),600);
+});
+["pointerup","pointercancel","pointerleave"].forEach(type=>chat.addEventListener(type,()=>clearTimeout(longPressTimer)));
+messageContext.addEventListener("click",async e=>{
+  const btn=e.target.closest("[data-context-action]"); if(!btn||!contextMessage)return;
+  const action=btn.dataset.contextAction, text=messagePlainText(contextMessage);
+  if(action==="copy"){
+    try{await navigator.clipboard.writeText(text);addMessage("Copied to clipboard ✓","swish")}catch{addMessage("Copy is not available on this browser.","swish")}
+  }
+  if(action==="reply"){
+    input.value=text.length>120?text.slice(0,120)+"…":text;
+    input.focus();
+    input.dataset.replyTo=text;
+    input.placeholder="Reply to message…";
+  }
+  if(action==="react"){
+    const reactions=["👍","❤️","😂","😮","😢","🔥"];
+    const bar=document.createElement("div");bar.className="reaction-bar";
+    reactions.forEach(r=>{const b=document.createElement("button");b.className="reaction";b.textContent=r;b.onclick=()=>{const old=contextMessage.querySelector(".reaction-bar");if(old)old.remove();bar.innerHTML=`<button class="reaction">${r} 1</button>`;contextMessage.appendChild(bar)};bar.appendChild(b)});
+    contextMessage.appendChild(bar);
+  }
+  closeMessageContext();
+});
+document.addEventListener("pointerdown",e=>{if(!e.target.closest("#messageContext"))closeMessageContext()});
+window.addEventListener("resize",closeMessageContext);
+
+sendBtn.onclick=sendMessage;
+input.onkeypress=e=>{if(e.key==="Enter")sendMessage()};
+
+async function generateImageFromAI(prompt){
+  if(!API_KEY){addMessage("Add API key first.","swish");return}
+  addMessage(`Generating: "${prompt}"...`,"swish");orb.classList.add("thinking");
+  try{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1/models/${IMAGE_MODEL}:generateContent`,{
+      method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":API_KEY},
+      body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseModalities:["TEXT","IMAGE"]}})
+    });
+    const data=await res.json();
+    if(data.error){addMessage("Image API error: "+data.error.message,"swish");return}
+    const part=(data.candidates?.[0]?.content?.parts||[]).find(p=>p.inlineData);
+    if(part){const filename=`SWISH_${Date.now()}.png`;const url=`data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;addImageMessage(url,"swish",filename);galleryStore.unshift({type:"ai-image",src:url,name:filename,time:new Date().toLocaleString()});saveStore("swish_gallery",galleryStore)}
+    else addMessage("No image returned.","swish");
+  }catch(e){addMessage("Image failed.","swish")}
+  orb.classList.remove("thinking");
+}
+
+let callRecognition=null;
+if(SpeechRecognition){
+  callRecognition=new SpeechRecognition();callRecognition.continuous=false;callRecognition.interimResults=false;callRecognition.lang="en-US";
+  callRecognition.onstart=()=>setCallState("listening");
+  callRecognition.onresult=async e=>{
+    const transcript=e.results[0][0].transcript;callTranscript.textContent=`You: "${transcript}"`;setCallState("thinking");
+    if(!API_KEY){speak("Add your API key first.",()=>callActive&&restartCallListening());return}
+    conversationHistory.push({role:"user",parts:[{text:transcript}]});trimHistory();saveHistory();
+    try{
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{
+        method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":API_KEY},
+        body:JSON.stringify({system_instruction:{parts:[{text:SYSTEM_PROMPT}]},contents:conversationHistory,tools,generationConfig:{temperature:.7,maxOutputTokens:500}})
+      });
+      const data=await res.json();
+      let reply="";const fcs=[];
+      if(data.candidates?.[0]?.content?.parts)for(const p of data.candidates[0].content.parts){if(p.text)reply+=p.text;if(p.functionCall)fcs.push(p.functionCall)}
+      for(const fc of fcs)reply=await executeTool(fc.name,fc.args||{});
+      if(reply){conversationHistory.push({role:"model",parts:[{text:reply}]});trimHistory();saveHistory();callTranscript.textContent=reply;speak(reply,()=>callActive&&restartCallListening())}
+      else speak("Done.",()=>callActive&&restartCallListening());
+    }catch{speak("Error.",()=>callActive&&restartCallListening())}
+  };
+  callRecognition.onerror=e=>{if(e.error==="not-allowed"){callStatus.textContent="Mic denied";endCall()}else if(callActive)restartCallListening()};
+}
+function setCallState(s){holoFigure.classList.remove("listening","thinking","speaking");orb.classList.remove("listening","thinking","speaking");if(s){holoFigure.classList.add(s);orb.classList.add(s)}callStatus.textContent={listening:"Listening...",thinking:"Thinking...",speaking:"Speaking..."}[s]||""}
+function restartCallListening(){if(!callRecognition||!callActive)return;setTimeout(()=>{try{callRecognition.start()}catch{}},400)}
+function startCall(){if(!callRecognition){addMessage("Use Chrome for call mode.","swish");return}if(!API_KEY){addMessage("Add API key first.","swish");apiSection.classList.remove("hidden");return}callActive=true;callOverlay.classList.add("open");callTranscript.textContent="";restartCallListening()}
+function endCall(){callActive=false;speechSynthesis.cancel();if(callRecognition)try{callRecognition.stop()}catch{};callOverlay.classList.remove("open");setCallState(null)}
+callModeBtn.onclick=startCall;callEndBtn.onclick=endCall;
+callOverlay.onclick=e=>{if(e.target===callOverlay||e.target.closest(".call-avatar-wrap")){speechSynthesis.cancel();callActive&&restartCallListening()}};
+
+function openModal(html){modalBody.innerHTML=html;modalOverlay.classList.add("open")}
+function closeModal(){modalOverlay.classList.remove("open")}
+menuBtn.onclick=()=>openModal(renderMenu());
+modalClose.onclick=closeModal;
+modalOverlay.onclick=e=>{if(e.target===modalOverlay)closeModal()};
+
+function renderMenu(){return`<div class="panel-title">S.W.I.S.H MENU</div>
+<button class="new-chat-btn" data-action="newchat">＋ New Conversation</button>
+<div class="menu-grid">
+<div class="menu-item" data-action="notes"><span class="menu-icon">📝</span>Notes</div>
+<div class="menu-item" data-action="reminders"><span class="menu-icon">⏰</span>Reminders</div>
+<div class="menu-item" data-action="schedule"><span class="menu-icon">📅</span>Schedule</div>
+<div class="menu-item" data-action="camera"><span class="menu-icon">📷</span>Camera</div>
+<div class="menu-item" data-action="imagestudio"><span class="menu-icon">🎨</span>Image Studio</div>
+<div class="menu-item" data-action="gallery"><span class="menu-icon">🖼️</span>Gallery</div>
+<div class="menu-item" data-action="sos"><span class="menu-icon">🆘</span>SOS</div>
+<div class="menu-item" data-action="bugscan"><span class="menu-icon">🛡️</span>Bug Scan</div>
+<div class="menu-item" data-action="about"><span class="menu-icon">ℹ️</span>About</div>
+</div>`}
+const backBtn=`<button class="back-link" data-action="menu">← Back</button>`;
+
+modalBody.onclick=e=>{
+  const el=e.target.closest("[data-action]");if(!el)return;
+  const a=el.dataset.action;
+  if(a==="menu")openModal(renderMenu());
+  if(a==="newchat"){clearChat();closeModal()}
+  if(a==="notes")openModal(renderNotes());
+  if(a==="reminders")openModal(renderReminders());
+  if(a==="schedule")openModal(renderSchedule());
+  if(a==="camera"){openModal(renderCamera());initCamera()}
+  if(a==="imagestudio")openModal(renderImageStudio());
+  if(a==="gallery")openModal(renderGallery());
+  if(a==="sos")openModal(renderSOS());
+  if(a==="bugscan"){runBugScan();closeModal()}
+  if(a==="about")openModal(renderAbout());
+  if(a==="note-add"){const t=document.getElementById("noteInput");if(t?.value.trim()){notesStore.unshift({text:t.value.trim(),time:new Date().toLocaleString()});saveStore("swish_notes",notesStore);openModal(renderNotes())}}
+  if(a==="note-del"){notesStore.splice(+el.dataset.idx,1);saveStore("swish_notes",notesStore);openModal(renderNotes())}
+  if(a==="reminder-add"){const t=document.getElementById("reminderText")?.value.trim(),w=document.getElementById("reminderTime")?.value;if(t&&w){const r={text:t,when:w,id:Date.now()};remindersStore.push(r);saveStore("swish_reminders",remindersStore);scheduleReminderAlert(r);openModal(renderReminders())}}
+  if(a==="reminder-del"){remindersStore=remindersStore.filter(r=>r.id!==+el.dataset.id);saveStore("swish_reminders",remindersStore);openModal(renderReminders())}
+  if(a==="event-add"){const t=document.getElementById("eventTitle")?.value.trim(),w=document.getElementById("eventTime")?.value;if(t&&w){scheduleStore.push({title:t,when:w,id:Date.now()});scheduleStore.sort((a,b)=>new Date(a.when)-new Date(b.when));saveStore("swish_schedule",scheduleStore);openModal(renderSchedule())}}
+  if(a==="event-del"){scheduleStore=scheduleStore.filter(s=>s.id!==+el.dataset.id);saveStore("swish_schedule",scheduleStore);openModal(renderSchedule())}
+  if(a==="camera-shot")takePhoto();
+  if(a==="camera-record")toggleRecording();
+  if(a==="camera-switch")switchCamera();
+  if(a==="imagegen-run")runImageGeneration();
+  if(a==="get-location")getLocationForSOS();
+  if(a==="gallery-del"){galleryStore.splice(+el.dataset.idx,1);saveStore("swish_gallery",galleryStore);openModal(renderGallery())}
+};
+
+function scheduleReminderAlert(r){const ms=new Date(r.when)-Date.now();if(ms<=0)return;setTimeout(()=>{if(Notification?.permission==="granted")new Notification("SWISH Reminder",{body:r.text});else addMessage(`⏰ ${r.text}`,"swish");speak(`Reminder: ${r.text}`)},Math.min(ms,2147000000))}
+if("Notification"in window&&Notification.permission==="default")Notification.requestPermission();
+
+function renderNotes(){const items=notesStore.map((n,i)=>`<div class="list-item"><div class="list-item-text">${escapeHtml(n.text)}<div class="list-item-meta">${n.time}</div></div><button data-action="note-del" data-idx="${i}">✕</button></div>`).join("")||`<div class="empty-hint">No notes yet.</div>`;return`${backBtn}<div class="panel-title">Notes</div><textarea class="field-textarea" id="noteInput" placeholder="Write a note..."></textarea><button class="action-btn full" data-action="note-add">Save Note</button>${items}`}
+function renderReminders(){const items=remindersStore.map(r=>`<div class="list-item"><div class="list-item-text">${escapeHtml(r.text)}<div class="list-item-meta">${new Date(r.when).toLocaleString()}</div></div><button data-action="reminder-del" data-id="${r.id}">✕</button></div>`).join("")||`<div class="empty-hint">No reminders.</div>`;return`${backBtn}<div class="panel-title">Reminders</div><input class="field-input" id="reminderText" placeholder="Remind me to..." style="margin-bottom:10px;width:100%"/><input class="field-input" id="reminderTime" type="datetime-local" style="margin-bottom:10px;width:100%"/><button class="action-btn full" data-action="reminder-add">Add Reminder</button>${items}`}
+function renderSchedule(){const items=scheduleStore.map(s=>`<div class="list-item"><div class="list-item-text">${escapeHtml(s.title)}<div class="list-item-meta">${new Date(s.when).toLocaleString()}</div></div><button data-action="event-del" data-id="${s.id}">✕</button></div>`).join("")||`<div class="empty-hint">Nothing scheduled.</div>`;return`${backBtn}<div class="panel-title">Schedule</div><input class="field-input" id="eventTitle" placeholder="Event title" style="margin-bottom:10px;width:100%"/><input class="field-input" id="eventTime" type="datetime-local" style="margin-bottom:10px;width:100%"/><button class="action-btn full" data-action="event-add">Add Event</button>${items}`}
+
+let cameraStream=null,mediaRecorder=null,recordedChunks=[],usingFront=false;
+function renderCamera(){return`${backBtn}<div class="panel-title">Camera</div><video id="cameraVideo" class="camera-preview" autoplay playsinline muted></video><div class="field-row"><button class="action-btn" data-action="camera-shot">📸 Photo</button><button class="action-btn" data-action="camera-record" id="recordBtn">⏺ Record</button><button class="action-btn" data-action="camera-switch">🔄 Flip</button></div>`}
+async function initCamera(){const v=document.getElementById("cameraVideo");if(!v)return;try{if(cameraStream)cameraStream.getTracks().forEach(t=>t.stop());cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:usingFront?"user":"environment"},audio:true});v.srcObject=cameraStream}catch{addMessage("Camera access denied.","swish")}}
+function switchCamera(){usingFront=!usingFront;initCamera()}
+function takePhoto(){const v=document.getElementById("cameraVideo");if(!v||!cameraStream)return;const c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);const url=c.toDataURL("image/png");galleryStore.unshift({type:"photo",src:url,name:`SWISH_${Date.now()}.png`,time:new Date().toLocaleString()});saveStore("swish_gallery",galleryStore);addImageMessage(url)}
+function toggleRecording(){const btn=document.getElementById("recordBtn");if(!cameraStream)return;if(!mediaRecorder||mediaRecorder.state==="inactive"){recordedChunks=[];mediaRecorder=new MediaRecorder(cameraStream);mediaRecorder.ondataavailable=e=>{if(e.data.size)recordedChunks.push(e.data)};mediaRecorder.onstop=()=>{const blob=new Blob(recordedChunks,{type:"video/webm"});const url=URL.createObjectURL(blob);galleryStore.unshift({type:"video",src:url,name:`SWISH_${Date.now()}.webm`,time:new Date().toLocaleString()});saveStore("swish_gallery",galleryStore)};mediaRecorder.start();if(btn)btn.textContent="⏹ Stop"}else{mediaRecorder.stop();if(btn)btn.textContent="⏺ Record"}}
+
+function renderImageStudio(){return`${backBtn}<div class="panel-title">Image Studio</div><textarea class="field-textarea" id="imagePrompt" placeholder="Describe the image..."></textarea><button class="action-btn full" data-action="imagegen-run">Generate</button><div id="imagegenResult"></div>`}
+async function runImageGeneration(){const p=document.getElementById("imagePrompt")?.value.trim();if(!p)return;document.getElementById("imagegenResult").innerHTML=`<div class="empty-hint">Generating...</div>`;await generateImageFromAI(p)}
+function renderGallery(){const items=galleryStore.map((g,i)=>{const m=g.type==="video"?`<video src="${g.src}" muted></video>`:`<img src="${g.src}"/>`;return`<div style="position:relative">${m}<button data-action="gallery-del" data-idx="${i}" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);border:none;color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px">✕</button></div>`}).join("");return`${backBtn}<div class="panel-title">Gallery</div>${items?`<div class="gallery-grid">${items}</div>`:`<div class="empty-hint">Empty</div>`}`}
+
+function renderSOS(){return`${backBtn}<div class="panel-title">SOS</div><a href="tel:${SOS_NUMBER}" class="action-btn sos full" style="display:block;text-align:center;text-decoration:none">🆘 Call Emergency</a><div class="empty-hint" style="text-align:left">${SOS_NUMBER?"Ready":"Set SOS_NUMBER in the code"}</div><button class="action-btn full" data-action="get-location">📍 My Location</button><div id="locationResult" class="empty-hint"></div>`}
+function getLocationForSOS(){const el=document.getElementById("locationResult");if(!navigator.geolocation){el.textContent="Not supported";return}el.textContent="Locating...";navigator.geolocation.getCurrentPosition(p=>{const{latitude:lat,longitude:lon}=p.coords;el.innerHTML=`${lat.toFixed(5)}, ${lon.toFixed(5)}<br><a href="https://maps.google.com/?q=${lat},${lon}" target="_blank" style="color:#7dd3fc">Open Maps</a>`},e=>el.textContent=e.message,{enableHighAccuracy:true,timeout:10000})}
+function renderAbout(){return`${backBtn}<div class="panel-title">About</div><div class="about-block"><p><strong>S.W.I.S.H</strong> — Special Wing Inteligence Smart Humanoid</p><p>Personal AI companion by Swish Tech ©2026</p><h3>Powered by</h3><p>Google Gemini (${MODEL})</p><h3>Commands</h3><p>Type @help in chat</p></div>`}
+
+function runBugScan(){
+  const r=["🛡️ Bug Scan Results","-------------------"];
+  r.push(API_KEY?"✅ API Key saved":"❌ No API Key");
+  r.push(SpeechRecognition?"✅ Speech Recognition":"❌ No Speech (use Chrome)");
+  r.push("speechSynthesis"in window?"✅ Text-to-Speech":"❌ No TTS");
+  try{localStorage.setItem("_t","1");localStorage.removeItem("_t");r.push("✅ localStorage OK")}catch{r.push("❌ localStorage blocked")}
+  r.push(navigator.mediaDevices?"✅ Camera API":"❌ No Camera");
+  r.push(`ℹ️ History: ${conversationHistory.length} msgs | Notes: ${notesStore.length} | Reminders: ${remindersStore.length}`);
+  r.push("-------------------");
+  addMessage(r.join("\n"),"swish");
+}
+
+if(conversationHistory.length){chat.innerHTML="";conversationHistory.forEach(m=>{const t=m.parts?.find(p=>p.text)?.text;if(t)addMessage(t,m.role==="user"?"user":"swish")})}
+</script>
+</body>
+</html>
